@@ -1,0 +1,4 @@
+request_id,user_id,request_type,currency
+r1,u1,purchase,USD
+r2,u2,purchase,USD
+r3,u3,investment,USD

@@ -1,0 +1,4 @@
+user_id,cash,monthly_income,monthly_recurring_spend,monthly_debt_payment,currency
+u1,5000,4000,1200,300,USD
+u2,200,2000,1800,400,USD
+u3,10000,6000,1000,200,USD
