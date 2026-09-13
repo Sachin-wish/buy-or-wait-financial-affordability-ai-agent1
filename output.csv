@@ -1,4 +1,4 @@
 request_id,decision,amount_safe_to_pay,earliest_safe_full_payment_date,recommended_payment_option,confidence,rationale,validation_status
 r1,buy,5000.00,,Full Payment,high,affordable within the 90-day forecast,valid
-r2,not_recommended,0.00,,,medium,no payment option remains affordable in the 90-day forecast; ignored 1 untrusted evidence item(s),valid
+r2,installments,193.33,2026-09-15,Installment Plan,high,affordable within the 90-day forecast; ignored 1 untrusted evidence item(s),valid
 r3,not_recommended,0.00,,,high,investment requests are outside purchase-affordability recommendations,valid

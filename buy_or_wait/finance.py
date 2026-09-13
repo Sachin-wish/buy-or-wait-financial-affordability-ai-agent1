@@ -63,7 +63,7 @@ def reconstruct(user_id: str, profiles, events, messages, images, as_of: date, t
         if cur != state.currency:
             try: amount = convert(amount, cur, state.currency, d, table)
             except ValueError: state.conflicts.append(f"unconverted event on {d}"); continue
-        # Dated transactions are one-off cash flows.  Treating every income
+        # Dated transactions are one-off cash flows. Treating every income
         # event as monthly income permanently inflates the forecast.
         if "income" in kind: state.one_offs.append((d, -amount))
         elif "recurring" in kind: state.recurring_spend_monthly = max(Decimal("0"), amount)
@@ -112,7 +112,7 @@ def option_balances(option: Option, horizon: dict[date, Decimal], start: date, b
     """Yield balances after an option's scheduled debits, preserving any emergency buffer.
 
     Upfront is paid on ``start``; recurring payments are monthly from the
-    due date (or 30 days after start when no due date is supplied).  This
+    due date (or 30 days after start when no due date is supplied). This
     makes eligibility account for the purchase itself, not just the existing
     balance.
     """
@@ -125,7 +125,7 @@ def option_balances(option: Option, horizon: dict[date, Decimal], start: date, b
         if payment_date < start:
             payment_date = start
         if payment_date not in horizon:
-            return False
+            continue
         debits[payment_date] = debits.get(payment_date, Decimal("0")) + option.recurring
     cumulative = Decimal("0")
     for day, balance in horizon.items():

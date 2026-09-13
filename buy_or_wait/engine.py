@@ -9,9 +9,10 @@ HEADERS = ("request_id", "decision", "amount_safe_to_pay", "earliest_safe_full_p
            "recommended_payment_option", "confidence", "rationale", "validation_status")
 
 class AffordabilityEngine:
-    def __init__(self, dataset, as_of: date | None = None):
+    def __init__(self, dataset, as_of: date | None = None, strategy: str = "deterministic"):
         self.data = dataset
         self.as_of = as_of or date.today()
+        self.strategy = strategy.lower()
         self.rate_table = rates(dataset.get("exchange_rates.csv", []))
 
     def evaluate(self) -> list[Decision]:
@@ -38,8 +39,23 @@ class AffordabilityEngine:
                 out.append(Decision(rid, "not_recommended", Decimal("0"), None, "", "low",
                                     "malformed financial input; no recommendation made", "invalid"))
                 continue
+
+            # Apply strategy adjustments if configured
+            buffer_multiplier = Decimal("1.0")
+            expense_stress = Decimal("1.0")
+            if self.strategy == "conservative":
+                buffer_multiplier = Decimal("1.25")
+                expense_stress = Decimal("1.10")
+            elif self.strategy == "optimistic":
+                buffer_multiplier = Decimal("0.75")
+                expense_stress = Decimal("0.95")
+
+            effective_buffer = state.emergency_buffer * buffer_multiplier
+            if expense_stress != Decimal("1.0"):
+                state.recurring_spend_monthly *= expense_stress
+
             horizon = forecast(state, self.as_of)
-            safe = max(Decimal("0"), min(horizon.values()) - state.emergency_buffer)
+            safe = max(Decimal("0"), min(horizon.values()) - effective_buffer)
             options, option_conflicts = [], 0
             for row in self.data.get("request_payment_options.csv", []):
                 if pick(row.values, "request_id", "id") != rid: continue
@@ -53,14 +69,14 @@ class AffordabilityEngine:
             feasible = [
                 o for o in options
                 if (not is_full(o) or o.upfront >= o.total)
-                and option_balances(o, horizon, self.as_of, buffer=state.emergency_buffer)
+                and option_balances(o, horizon, self.as_of, buffer=effective_buffer)
             ]
             full = [o for o in feasible if is_full(o)]
             earliest = None
             if not full and not (option_conflicts and not options):
                 full_options = [o for o in options if is_full(o)]
                 for d, bal in horizon.items():
-                    if any(bal >= (o.total + state.emergency_buffer) and all(v - (o.total if day == d else Decimal("0")) >= state.emergency_buffer
+                    if any(bal >= (o.total + effective_buffer) and all(v - (o.total if day == d else Decimal("0")) >= effective_buffer
                                                    for day, v in horizon.items() if day >= d)
                                for o in full_options):
                         earliest = d
