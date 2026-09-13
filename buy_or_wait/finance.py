@@ -40,6 +40,8 @@ def reconstruct(user_id: str, profiles, events, messages, images, as_of: date, t
             state.income_monthly = profile_money(pick(profile, "monthly_income", "income"))
             state.recurring_spend_monthly = profile_money(pick(profile, "monthly_recurring_spend", "recurring_spend", "monthly_expenses"))
             state.debt_payment_monthly = profile_money(pick(profile, "monthly_debt_payment", "debt_payment"))
+            buf = profile_money(pick(profile, "emergency_buffer", "min_reserve", "minimum_reserve", "reserve_buffer", "reserve", "buffer", default="0"))
+            state.emergency_buffer = max(Decimal("0"), buf)
         except ValueError:
             state.conflicts.append("profile currency conversion unavailable")
     state.events = []
@@ -106,8 +108,8 @@ def option_from(row, target, on, table) -> Option:
         recurring, installments,
         due_date, target)
 
-def option_balances(option: Option, horizon: dict[date, Decimal], start: date):
-    """Yield balances after an option's scheduled debits.
+def option_balances(option: Option, horizon: dict[date, Decimal], start: date, buffer: Decimal = Decimal("0")):
+    """Yield balances after an option's scheduled debits, preserving any emergency buffer.
 
     Upfront is paid on ``start``; recurring payments are monthly from the
     due date (or 30 days after start when no due date is supplied).  This
@@ -116,7 +118,7 @@ def option_balances(option: Option, horizon: dict[date, Decimal], start: date):
     """
     debits = {start: option.upfront}
     if option.installments <= 1:
-        return horizon[start] >= option.upfront
+        return (horizon[start] - option.upfront) >= buffer
     first = option.due_date or (start + timedelta(days=30))
     for n in range(option.installments):
         payment_date = first + timedelta(days=30 * n)
@@ -128,6 +130,6 @@ def option_balances(option: Option, horizon: dict[date, Decimal], start: date):
     cumulative = Decimal("0")
     for day, balance in horizon.items():
         cumulative += debits.get(day, Decimal("0"))
-        if balance < cumulative:
+        if (balance - cumulative) < buffer:
             return False
     return True

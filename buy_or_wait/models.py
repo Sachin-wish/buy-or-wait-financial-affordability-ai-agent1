@@ -47,6 +47,7 @@ class FinancialState:
     events: list[dict[str, Any]] = field(default_factory=list)
     conflicts: list[str] = field(default_factory=list)
     untrusted_ignored: int = 0
+    emergency_buffer: Decimal = Decimal("0")
 
 @dataclass(frozen=True)
 class Option:

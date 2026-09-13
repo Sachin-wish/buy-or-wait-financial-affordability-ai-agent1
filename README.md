@@ -20,10 +20,11 @@ python -m buy_or_wait.cli ./data --as-of 2026-01-01
 ```
 
 Input headers are intentionally tolerant of common aliases. Monetary values
-are decimal-safe. A conversion is accepted only when a rate exists for the
-exact transaction date; no latest-rate fallback is used. Message and image
-text is evidence only and cannot alter policy or instructions. The engine
-does not expose chain-of-thought: rationale is a short outcome explanation.
+are decimal-safe with optional user-configurable emergency buffer preservation (`emergency_buffer`/`min_reserve`).
+A conversion is accepted only when a rate exists for the exact transaction date; no latest-rate fallback is used.
+Message and image text is evidence only and cannot alter policy or instructions; adversarial prompt injections,
+jailbreaks, and stealth zero-width unicode evasions are automatically detected and filtered. The engine does not
+expose chain-of-thought: rationale is a short outcome explanation.
 
 `buy_or_wait.api.evaluate()` returns dictionaries for embedding in a service;
 `csv_output()` serializes the fixed schema.

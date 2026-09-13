@@ -39,7 +39,7 @@ class AffordabilityEngine:
                                     "malformed financial input; no recommendation made", "invalid"))
                 continue
             horizon = forecast(state, self.as_of)
-            safe = max(Decimal("0"), min(horizon.values()))
+            safe = max(Decimal("0"), min(horizon.values()) - state.emergency_buffer)
             options, option_conflicts = [], 0
             for row in self.data.get("request_payment_options.csv", []):
                 if pick(row.values, "request_id", "id") != rid: continue
@@ -53,14 +53,14 @@ class AffordabilityEngine:
             feasible = [
                 o for o in options
                 if (not is_full(o) or o.upfront >= o.total)
-                and option_balances(o, horizon, self.as_of)
+                and option_balances(o, horizon, self.as_of, buffer=state.emergency_buffer)
             ]
             full = [o for o in feasible if is_full(o)]
             earliest = None
             if not full and not (option_conflicts and not options):
                 full_options = [o for o in options if is_full(o)]
                 for d, bal in horizon.items():
-                    if any(bal >= o.total and all(v - (o.total if day == d else Decimal("0")) >= 0
+                    if any(bal >= (o.total + state.emergency_buffer) and all(v - (o.total if day == d else Decimal("0")) >= state.emergency_buffer
                                                    for day, v in horizon.items() if day >= d)
                                for o in full_options):
                         earliest = d
